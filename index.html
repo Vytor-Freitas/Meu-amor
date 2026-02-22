@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enxoval Isis</title>
-    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fonte fofa e arredondada (Nunito) -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -18,11 +18,13 @@
                     },
                     colors: {
                         baby: {
-                            100: '#fce7f3', // Rosa bem claro
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
                             200: '#fbcfe8',
                             300: '#f9a8d4',
                             400: '#f472b6',
-                            500: '#ec4899', // Rosa principal
+                            500: '#ec4899',
+                            600: '#db2777',
                         }
                     }
                 }
@@ -30,40 +32,51 @@
         }
     </script>
     <style>
-        /* Estilos customizados para o checkbox e animações */
-        .checkbox-custom {
-            accent-color: #ec4899;
-            width: 1.5rem;
-            height: 1.5rem;
-            cursor: pointer;
-            border-radius: 0.375rem;
-        }
-        .item-text {
-            transition: all 0.3s ease;
+        .item-text { transition: all 0.3s ease; }
+        .item-checked .item-text {
+            text-decoration: line-through;
+            color: #9ca3af; 
         }
         .item-checked {
-            text-decoration: line-through;
-            color: #9ca3af; /* Cinza claro */
+            background-color: #fdf2f8 !important; 
+            border-color: #fbcfe8 !important; 
+        }
+        /* Remove as setinhas feias do campo de número */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* Estilo para campos editáveis */
+        [contenteditable]:empty:before {
+            content: "Digite aqui...";
+            color: #9ca3af;
         }
     </style>
 </head>
 <body class="bg-baby-100 text-gray-800 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
 
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-4xl mx-auto">
         <!-- Cabeçalho -->
-        <div class="text-center mb-10">
+        <div class="text-center mb-6 pt-2">
             <h1 class="text-5xl font-extrabold text-baby-500 mb-2 drop-shadow-sm">
                 Enxoval Isis 🍼
             </h1>
-            <p class="text-gray-600 font-semibold text-lg">Lista de comprinhas para a chegada da princesa</p>
-            
-            <!-- Barra de Progresso -->
-            <div class="mt-6 bg-white rounded-full h-6 shadow-inner overflow-hidden border border-baby-200 relative">
+            <p class="text-gray-600 font-semibold text-lg">Lista de comprinhas personalizável</p>
+        </div>
+        
+        <!-- Barra de Progresso Flutuante (Sticky) -->
+        <div class="sticky top-4 z-50 bg-white/85 backdrop-blur-md p-4 rounded-3xl shadow-lg border border-baby-200 mb-10">
+            <div class="bg-baby-50 rounded-full h-8 shadow-inner overflow-hidden border border-baby-200 relative">
                 <div id="progress-bar" class="bg-baby-400 h-full transition-all duration-500 ease-out w-0"></div>
-                <div id="progress-text" class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-700 mix-blend-darken">
+                <div id="progress-text" class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-800 mix-blend-darken">
                     0% Concluído
                 </div>
             </div>
+            <p class="text-xs text-gray-500 mt-2 text-center font-semibold" id="progress-details">Carregando...</p>
         </div>
 
         <!-- Categoria 1: Panos -->
@@ -72,7 +85,7 @@
                 <span class="text-3xl mr-2">🧸</span> Panos
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="section-panos">
-                <!-- Itens serão gerados pelo JavaScript -->
+                <!-- Itens dinâmicos -->
             </div>
         </section>
 
@@ -82,7 +95,7 @@
                 <span class="text-3xl mr-2">👗</span> Roupas
             </h2>
             <div class="space-y-6" id="section-roupas">
-                <!-- Itens serão gerados pelo JavaScript -->
+                <!-- Itens dinâmicos -->
             </div>
         </section>
 
@@ -92,156 +105,338 @@
                 <span class="text-3xl mr-2">👩‍👧</span> Para mim (Mamãe)
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="section-paramim">
-                <!-- Itens serão gerados pelo JavaScript -->
+                <!-- Itens dinâmicos -->
             </div>
         </section>
 
         <div class="text-center mt-8 mb-12">
-            <button id="btn-reset" class="text-sm text-gray-400 hover:text-baby-500 underline transition-colors">
-                Limpar toda a lista e recomeçar
+            <button onclick="resetData()" class="text-sm text-gray-400 hover:text-red-500 underline transition-colors">
+                Restaurar lista original (Apagar tudo)
             </button>
         </div>
     </div>
 
     <script>
-        // Dados extraídos da imagem
-        const enxovalData = {
+        // --- 1. DADOS PADRÃO (Base Inicial) ---
+        const defaultData = {
             panos: [
-                { id: 'pano-fralda', name: 'Fralda de ombro (10)' },
-                { id: 'pano-cueiro', name: 'Cueiro (6)' },
-                { id: 'pano-cobertor', name: 'Cobertor (3)' },
-                { id: 'pano-manta', name: 'Manta (3)' },
-                { id: 'pano-boca', name: 'Pano de boca (6)' },
-                { id: 'pano-toalha', name: 'Toalha (2)' },
-                { id: 'pano-lencol', name: 'Lençol de elástico p/ berço (4)' },
-                { id: 'pano-mosquiteiro', name: 'Mosquiteiro (1)' }
+                { id: 'pano-fralda', name: 'Fralda de ombro', target: 10, current: 0 },
+                { id: 'pano-cueiro', name: 'Cueiro', target: 6, current: 0 },
+                { id: 'pano-cobertor', name: 'Cobertor', target: 3, current: 0 },
+                { id: 'pano-manta', name: 'Manta', target: 3, current: 0 },
+                { id: 'pano-boca', name: 'Pano de boca', target: 6, current: 0 },
+                { id: 'pano-toalha', name: 'Toalha', target: 2, current: 0 },
+                { id: 'pano-lencol', name: 'Lençol de elástico p/ berço', target: 4, current: 0 },
+                { id: 'pano-mosquiteiro', name: 'Mosquiteiro', target: 1, current: 0 }
             ],
             roupas: [
-                { name: 'Body manga curta', sizes: [{ id: 'rmc-rn', label: '3 RN' }, { id: 'rmc-p', label: '6 P' }, { id: 'rmc-m', label: '3 M' }] },
-                { name: 'Body manga longa', sizes: [{ id: 'rml-rn', label: '3 RN' }, { id: 'rml-p', label: '3 P' }, { id: 'rml-m', label: '3 M' }] },
-                { name: 'Camiseta', sizes: [{ id: 'rcam-rn', label: '3 RN' }, { id: 'rcam-p', label: '3 P' }, { id: 'rcam-m', label: '3 M' }] },
-                { name: 'Calça', sizes: [{ id: 'rcal-rn', label: '3 RN' }, { id: 'rcal-p', label: '9 P' }, { id: 'rcal-m', label: '3 M' }] },
-                { name: 'Tapa fralda', sizes: [{ id: 'rtf-p', label: '3 P' }, { id: 'rtf-m', label: '3 M' }] },
-                { name: 'Macacão', sizes: [{ id: 'rmac-rn', label: '3 RN' }, { id: 'rmac-p', label: '6 P' }, { id: 'rmac-m', label: '3 M' }] },
-                { name: 'Conjunto de frio', sizes: [{ id: 'rcf-rn', label: '1 RN' }, { id: 'rcf-p', label: '2 P' }, { id: 'rcf-m', label: '1 M' }] },
-                { name: 'Saída maternidade (Simples)', sizes: [{ id: 'rsm-rn', label: '1 RN' }] },
-                { name: 'Luva', sizes: [{ id: 'rluv-rn', label: '3 RN' }] },
-                { name: 'Touca', sizes: [{ id: 'rtou-rn', label: '2 RN' }, { id: 'rtou-p', label: '2 P' }] },
-                { name: 'Meia', sizes: [{ id: 'rmei-rn', label: '3 RN' }, { id: 'rmei-p', label: '3 P' }, { id: 'rmei-m', label: '3 M' }] },
-                { name: 'Sapato / Sandália', sizes: [{ id: 'rsap-rn', label: '1 RN' }, { id: 'rsap-p', label: '1 P' }, { id: 'rsap-m', label: '1 M' }] }
+                { id: 'roupa-1', name: 'Body manga curta', sizes: [{ id: 'rmc-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rmc-p', label: 'Tamanho P', target: 6, current: 0 }, { id: 'rmc-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-2', name: 'Body manga longa', sizes: [{ id: 'rml-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rml-p', label: 'Tamanho P', target: 3, current: 0 }, { id: 'rml-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-3', name: 'Camiseta', sizes: [{ id: 'rcam-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rcam-p', label: 'Tamanho P', target: 3, current: 0 }, { id: 'rcam-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-4', name: 'Calça', sizes: [{ id: 'rcal-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rcal-p', label: 'Tamanho P', target: 9, current: 0 }, { id: 'rcal-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-5', name: 'Tapa fralda', sizes: [{ id: 'rtf-p', label: 'Tamanho P', target: 3, current: 0 }, { id: 'rtf-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-6', name: 'Macacão', sizes: [{ id: 'rmac-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rmac-p', label: 'Tamanho P', target: 6, current: 0 }, { id: 'rmac-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-7', name: 'Conjunto de frio', sizes: [{ id: 'rcf-rn', label: 'Tamanho RN', target: 1, current: 0 }, { id: 'rcf-p', label: 'Tamanho P', target: 2, current: 0 }, { id: 'rcf-m', label: 'Tamanho M', target: 1, current: 0 }] },
+                { id: 'roupa-8', name: 'Saída maternidade', sizes: [{ id: 'rsm-rn', label: 'Tamanho RN (Simples)', target: 1, current: 0 }] },
+                { id: 'roupa-9', name: 'Luva', sizes: [{ id: 'rluv-rn', label: 'Tamanho RN', target: 3, current: 0 }] },
+                { id: 'roupa-10', name: 'Touca', sizes: [{ id: 'rtou-rn', label: 'Tamanho RN', target: 2, current: 0 }, { id: 'rtou-p', label: 'Tamanho P', target: 2, current: 0 }] },
+                { id: 'roupa-11', name: 'Meia', sizes: [{ id: 'rmei-rn', label: 'Tamanho RN', target: 3, current: 0 }, { id: 'rmei-p', label: 'Tamanho P', target: 3, current: 0 }, { id: 'rmei-m', label: 'Tamanho M', target: 3, current: 0 }] },
+                { id: 'roupa-12', name: 'Sapato / Sandália', sizes: [{ id: 'rsap-rn', label: 'Tamanho RN', target: 1, current: 0 }, { id: 'rsap-p', label: 'Tamanho P', target: 1, current: 0 }, { id: 'rsap-m', label: 'Tamanho M', target: 1, current: 0 }] }
             ],
-            paraMim: [
-                { id: 'mae-abs-seios', name: 'Absorvente para seios' },
-                { id: 'mae-abs-parto', name: 'Absorvente pós parto' },
-                { id: 'mae-sutia', name: 'Sutiã amamentação' },
-                { id: 'mae-rosquinha', name: 'Rosquinha para seios' },
-                { id: 'mae-pijama', name: 'Pijama' },
-                { id: 'mae-pomada', name: 'Pomada p/ fissuras' },
-                { id: 'mae-toalha', name: 'Toalha' }
+            paramim: [
+                { id: 'mae-abs-seios', name: 'Absorvente para seios', target: 1, current: 0 },
+                { id: 'mae-abs-parto', name: 'Absorvente pós parto', target: 1, current: 0 },
+                { id: 'mae-sutia', name: 'Sutiã amamentação', target: 1, current: 0 },
+                { id: 'mae-rosquinha', name: 'Rosquinha para seios', target: 1, current: 0 },
+                { id: 'mae-pijama', name: 'Pijama', target: 1, current: 0 },
+                { id: 'mae-pomada', name: 'Pomada p/ fissuras', target: 1, current: 0 },
+                { id: 'mae-toalha', name: 'Toalha', target: 1, current: 0 }
             ]
         };
 
-        // Função para criar um item simples (checkbox + label)
-        function createSimpleItem(item) {
+        // --- 2. GERENCIAMENTO DE ESTADO E LOCAL STORAGE ---
+        let enxovalData = {};
+
+        function loadData() {
+            const savedData = localStorage.getItem('enxoval_isis_full_v2');
+            if (savedData) {
+                enxovalData = JSON.parse(savedData);
+            } else {
+                // Se for a primeira vez usando esta versão nova, copia os dados padrão
+                enxovalData = JSON.parse(JSON.stringify(defaultData));
+                
+                // Tenta puxar as quantidades da versão antiga (se o usuário já usava)
+                const oldQuantities = JSON.parse(localStorage.getItem('enxoval_isis_quantities')) || {};
+                ['panos', 'paramim'].forEach(cat => {
+                    enxovalData[cat].forEach(item => { item.current = oldQuantities[item.id] || 0; });
+                });
+                enxovalData.roupas.forEach(roupa => {
+                    roupa.sizes.forEach(size => { size.current = oldQuantities[size.id] || 0; });
+                });
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('enxoval_isis_full_v2', JSON.stringify(enxovalData));
+        }
+
+        window.resetData = () => {
+            if(confirm('Tem certeza que deseja apagar TODAS as configurações, itens adicionados e quantidades? O aplicativo voltará ao estado original da lista.')) {
+                localStorage.removeItem('enxoval_isis_full_v2');
+                localStorage.removeItem('enxoval_isis_quantities');
+                loadData();
+                renderAll();
+            }
+        };
+
+        // Função geradora de ID para novos itens
+        const genId = () => 'id-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+        // --- 3. LÓGICA DE ATUALIZAÇÃO ---
+        const findItem = (category, itemId, parentId = null) => {
+            if (parentId) {
+                const parent = enxovalData[category].find(i => i.id === parentId);
+                return parent ? parent.sizes.find(i => i.id === itemId) : null;
+            }
+            return enxovalData[category].find(i => i.id === itemId);
+        };
+
+        window.updateQty = (category, itemId, change, parentId = null) => {
+            let item = findItem(category, itemId, parentId);
+            if (item) {
+                item.current += change;
+                if (item.current < 0) item.current = 0;
+                saveData();
+                
+                // Atualiza o HTML sem recarregar tudo (para não perder o foco)
+                const currentEl = document.getElementById(`qty-current-${itemId}`);
+                if (currentEl) currentEl.innerText = item.current;
+                
+                checkCompletion(itemId, item.current, item.target);
+                updateProgress();
+            }
+        };
+
+        window.updateTarget = (category, itemId, newTargetStr, parentId = null) => {
+            let newTarget = parseInt(newTargetStr);
+            if (isNaN(newTarget) || newTarget < 1) newTarget = 1; // Mínimo 1
+
+            let item = findItem(category, itemId, parentId);
+            if (item) {
+                item.target = newTarget;
+                saveData();
+                checkCompletion(itemId, item.current, item.target);
+                updateProgress();
+            }
+        };
+
+        window.updateName = (category, itemId, newName, parentId = null) => {
+            let item = findItem(category, itemId, parentId);
+            if (!item && !parentId) {
+                 item = enxovalData[category].find(i => i.id === itemId); // Se for título de grupo de roupa
+            }
+            if (item && newName.trim() !== '') {
+                if (parentId && item.label !== undefined) item.label = newName.trim();
+                else item.name = newName.trim();
+                saveData();
+            }
+        };
+
+        function checkCompletion(itemId, current, target) {
+            const container = document.getElementById(`container-${itemId}`);
+            if (container) {
+                if (current >= target) container.classList.add('item-checked');
+                else container.classList.remove('item-checked');
+            }
+        }
+
+        // --- 4. FUNÇÕES DE ADICIONAR E REMOVER ---
+        window.addNewItem = (category) => {
+            if (category === 'roupas') {
+                enxovalData[category].push({
+                    id: genId(),
+                    name: 'Nova Roupa (Clique para editar)',
+                    sizes: [{ id: genId(), label: 'Tamanho Único', target: 1, current: 0 }]
+                });
+            } else {
+                enxovalData[category].push({
+                    id: genId(),
+                    name: 'Novo Item (Clique para editar)',
+                    target: 1,
+                    current: 0
+                });
+            }
+            saveData();
+            renderCategory(category);
+            updateProgress();
+        };
+
+        window.addSize = (parentId) => {
+            const parent = enxovalData.roupas.find(i => i.id === parentId);
+            if (parent) {
+                parent.sizes.push({
+                    id: genId(), label: 'Novo Tam.', target: 1, current: 0
+                });
+                saveData();
+                renderCategory('roupas');
+                updateProgress();
+            }
+        };
+
+        window.deleteItem = (category, itemId, parentId = null) => {
+            if (confirm('Tem certeza que deseja remover este item da lista?')) {
+                if (parentId) {
+                    const parent = enxovalData[category].find(i => i.id === parentId);
+                    if (parent) {
+                        parent.sizes = parent.sizes.filter(i => i.id !== itemId);
+                    }
+                } else {
+                    enxovalData[category] = enxovalData[category].filter(i => i.id !== itemId);
+                }
+                saveData();
+                renderCategory(category);
+                updateProgress();
+            }
+        };
+
+        // --- 5. GERAÇÃO DE INTERFACE HTML ---
+        function createSimpleItem(item, category) {
+            const checkedClass = item.current >= item.target ? 'item-checked' : '';
             return `
-                <label class="flex items-center space-x-3 p-3 rounded-xl hover:bg-baby-100/50 transition-colors cursor-pointer group">
-                    <input type="checkbox" id="${item.id}" class="checkbox-custom group-hover:scale-110 transition-transform">
-                    <span class="text-lg font-semibold text-gray-700 item-text select-none" id="label-${item.id}">
-                        ${item.name}
-                    </span>
-                </label>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100 transition-colors relative group ${checkedClass}" id="container-${item.id}">
+                    
+                    <div class="flex-1 mb-3 sm:mb-0 mr-2 pr-6">
+                        <span contenteditable="true" onblur="window.updateName('${category}', '${item.id}', this.innerText)" class="text-lg font-semibold text-gray-700 outline-none border-b border-dashed border-gray-300 hover:border-baby-400 focus:border-baby-500 focus:bg-white px-1 py-0.5 rounded transition-all item-text break-words inline-block w-full" title="Clique para editar o nome">${item.name}</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 self-end sm:self-auto bg-white p-1 rounded-lg shadow-sm border border-gray-100">
+                        <button onclick="window.updateQty('${category}', '${item.id}', -1)" class="w-8 h-8 rounded bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 flex items-center justify-center font-bold transition-colors text-lg">-</button>
+                        
+                        <div class="flex items-center text-sm font-extrabold text-gray-800 bg-gray-50 rounded px-1" title="Sua qtd / Meta (Editável)">
+                            <span id="qty-current-${item.id}" class="w-6 text-center">${item.current}</span>
+                            <span class="mx-0.5 text-gray-400">/</span>
+                            <input type="number" min="1" value="${item.target}" onchange="window.updateTarget('${category}', '${item.id}', this.value)" class="w-10 text-center bg-transparent border-b border-dashed border-gray-300 hover:border-baby-400 focus:outline-none focus:border-baby-500 focus:bg-white text-gray-700 p-0.5">
+                        </div>
+
+                        <button onclick="window.updateQty('${category}', '${item.id}', 1)" class="w-8 h-8 rounded bg-baby-100 hover:bg-baby-400 text-baby-600 hover:text-white flex items-center justify-center font-bold transition-colors text-lg">+</button>
+                    </div>
+
+                    <button onclick="window.deleteItem('${category}', '${item.id}')" class="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-2" title="Excluir item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
             `;
         }
 
-        // Função para criar grupo de roupas (Nome + Tamanhos)
-        function createClothingItem(roupa) {
-            const sizesHtml = roupa.sizes.map(size => `
-                <label class="flex items-center space-x-2 bg-gray-50 p-2 px-3 rounded-lg border border-gray-100 hover:bg-baby-100 transition-colors cursor-pointer">
-                    <input type="checkbox" id="${size.id}" class="checkbox-custom w-4 h-4">
-                    <span class="font-bold text-gray-700 item-text select-none" id="label-${size.id}">${size.label}</span>
-                </label>
-            `).join('');
+        function createClothingItem(roupa, category) {
+            const sizesHtml = roupa.sizes.map(size => {
+                const checkedClass = size.current >= size.target ? 'item-checked' : '';
+                return `
+                <div class="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-lg shadow-sm transition-colors relative group ${checkedClass}" id="container-${size.id}">
+                    
+                    <span contenteditable="true" onblur="window.updateName('${category}', '${size.id}', this.innerText, '${roupa.id}')" class="font-bold text-gray-600 text-sm outline-none border-b border-dashed border-gray-300 hover:border-baby-400 focus:border-baby-500 focus:bg-gray-50 px-1 py-0.5 rounded transition-all item-text flex-1 mr-1 truncate" title="Editar tamanho">${size.label}</span>
+                    
+                    <div class="flex items-center space-x-1">
+                        <button onclick="window.updateQty('${category}', '${size.id}', -1, '${roupa.id}')" class="w-7 h-7 rounded bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-600 flex items-center justify-center font-bold transition-colors">-</button>
+                        
+                        <div class="flex items-center text-xs font-extrabold text-gray-800 bg-gray-50 rounded px-1" title="Sua qtd / Meta">
+                            <span id="qty-current-${size.id}" class="w-4 text-center">${size.current}</span>
+                            <span class="mx-0.5 text-gray-400">/</span>
+                            <input type="number" min="1" value="${size.target}" onchange="window.updateTarget('${category}', '${size.id}', this.value, '${roupa.id}')" class="w-8 text-center bg-transparent border-b border-dashed border-gray-300 hover:border-baby-400 focus:outline-none focus:border-baby-500 text-gray-700 p-0.5">
+                        </div>
+
+                        <button onclick="window.updateQty('${category}', '${size.id}', 1, '${roupa.id}')" class="w-7 h-7 rounded bg-baby-100 hover:bg-baby-400 text-baby-600 hover:text-white flex items-center justify-center font-bold transition-colors">+</button>
+                    </div>
+
+                    <button onclick="window.deleteItem('${category}', '${size.id}', '${roupa.id}')" class="text-gray-300 hover:text-red-500 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" title="Remover tamanho">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            `}).join('');
 
             return `
-                <div class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                    <div class="font-bold text-lg text-gray-800 mb-3 ml-2">${roupa.name}</div>
-                    <div class="flex flex-wrap gap-3 ml-2">
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 relative group" id="container-${roupa.id}">
+                    <div class="flex justify-between items-center mb-3 ml-1 flex-wrap gap-2">
+                        <div contenteditable="true" onblur="window.updateName('${category}', '${roupa.id}', this.innerText)" class="font-extrabold text-lg text-gray-800 outline-none border-b border-dashed border-gray-300 hover:border-baby-400 focus:border-baby-500 focus:bg-white px-1 rounded transition-all flex-1 min-w-[150px]" title="Editar Nome da Roupa">${roupa.name}</div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button onclick="window.addSize('${roupa.id}')" class="text-xs bg-baby-100 text-baby-600 hover:bg-baby-200 px-2 py-1.5 rounded font-bold transition-colors flex items-center shadow-sm">
+                                <span class="mr-1 text-lg leading-none">+</span> Tam
+                            </button>
+                            <button onclick="window.deleteItem('${category}', '${roupa.id}')" class="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100" title="Remover conjunto de roupa inteiro">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         ${sizesHtml}
                     </div>
                 </div>
             `;
         }
 
-        // Renderizar a lista na tela
-        document.getElementById('section-panos').innerHTML = enxovalData.panos.map(createSimpleItem).join('');
-        document.getElementById('section-roupas').innerHTML = enxovalData.roupas.map(createClothingItem).join('');
-        document.getElementById('section-paramim').innerHTML = enxovalData.paraMim.map(createSimpleItem).join('');
+        function renderCategory(category) {
+            const container = document.getElementById(`section-${category}`);
+            
+            if (category === 'roupas') {
+                container.innerHTML = enxovalData[category].map(item => createClothingItem(item, category)).join('') + 
+                    `<div class="mt-4"><button onclick="window.addNewItem('${category}')" class="border-2 border-dashed border-baby-300 text-baby-500 hover:bg-baby-50 hover:border-baby-400 font-bold py-3 px-6 rounded-xl transition-all w-full flex items-center justify-center shadow-sm"><span class="text-xl mr-2">+</span> Adicionar nova roupa</button></div>`;
+            } else {
+                container.innerHTML = enxovalData[category].map(item => createSimpleItem(item, category)).join('') + 
+                    `<div class="mt-2 sm:col-span-2"><button onclick="window.addNewItem('${category}')" class="border-2 border-dashed border-baby-300 text-baby-500 hover:bg-baby-50 hover:border-baby-400 font-bold py-3 px-6 rounded-xl transition-all w-full flex items-center justify-center shadow-sm"><span class="text-xl mr-2">+</span> Adicionar novo item</button></div>`;
+            }
+        }
 
-        // Lógica de Interatividade e Salvamento
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
+        function renderAll() {
+            renderCategory('panos');
+            renderCategory('roupas');
+            renderCategory('paramim');
+            updateProgress();
+        }
 
+        // --- 6. ATUALIZAÇÃO DA BARRA DE PROGRESSO ---
         function updateProgress() {
-            const total = checkboxes.length;
-            const checked = document.querySelectorAll('input[type="checkbox"]:checked').length;
-            const percentage = Math.round((checked / total) * 100);
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressDetails = document.getElementById('progress-details');
+
+            let totalTarget = 0;
+            let totalCurrent = 0;
+
+            ['panos', 'paramim'].forEach(cat => {
+                enxovalData[cat].forEach(item => {
+                    totalTarget += item.target;
+                    totalCurrent += Math.min(item.current, item.target);
+                });
+            });
+
+            enxovalData.roupas.forEach(roupa => {
+                roupa.sizes.forEach(size => {
+                    totalTarget += size.target;
+                    totalCurrent += Math.min(size.current, size.target);
+                });
+            });
+
+            const percentage = totalTarget === 0 ? 0 : Math.round((totalCurrent / totalTarget) * 100);
             
             progressBar.style.width = `${percentage}%`;
-            progressText.innerText = `${percentage}% Concluído (${checked} de ${total})`;
+            progressText.innerText = `${percentage}% Concluído`;
+            progressDetails.innerText = `${totalCurrent} de ${totalTarget} itens essenciais comprados`;
 
-            if (percentage === 100) {
+            if (percentage >= 100 && totalTarget > 0) {
                 progressBar.classList.remove('bg-baby-400');
                 progressBar.classList.add('bg-green-400');
-                progressText.innerText = '🎉 Enxoval Completo! 🎉';
+                progressText.innerText = '🎉 Enxoval 100% Completo! 🎉';
             } else {
                 progressBar.classList.add('bg-baby-400');
                 progressBar.classList.remove('bg-green-400');
             }
         }
 
-        function toggleLineThrough(checkbox) {
-            const labelSpan = document.getElementById(`label-${checkbox.id}`);
-            if (labelSpan) {
-                if (checkbox.checked) {
-                    labelSpan.classList.add('item-checked');
-                } else {
-                    labelSpan.classList.remove('item-checked');
-                }
-            }
-        }
-
-        // Inicializar checkboxes com base no LocalStorage
-        checkboxes.forEach(checkbox => {
-            const savedState = localStorage.getItem(`enxoval_isis_${checkbox.id}`);
-            if (savedState === 'true') {
-                checkbox.checked = true;
-            }
-            toggleLineThrough(checkbox);
-
-            // Ouvinte de evento para cliques
-            checkbox.addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                localStorage.setItem(`enxoval_isis_${checkbox.id}`, isChecked);
-                toggleLineThrough(e.target);
-                updateProgress();
-            });
-        });
-
-        // Botão de resetar tudo
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            if(confirm('Tem certeza que deseja desmarcar todos os itens da lista?')) {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                    localStorage.setItem(`enxoval_isis_${checkbox.id}`, 'false');
-                    toggleLineThrough(checkbox);
-                });
-                updateProgress();
-            }
-        });
-
-        // Atualizar progresso inicial
-        updateProgress();
+        // --- INICIALIZAÇÃO ---
+        loadData();
+        renderAll();
 
     </script>
 </body>
